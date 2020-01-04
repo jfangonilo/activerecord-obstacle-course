@@ -31,9 +31,7 @@ describe 'ActiveRecord Obstacle Course, Week 5' do
     # ------------------------------------------------------------
 
     # ------------------ ActiveRecord Solution ----------------------
-    # Solution goes here
-    # When you find a solution, experiment with adjusting your method chaining
-    # Which ones are you able to switch around without relying on Ruby's Enumerable methods?
+    ordered_items_names = Item.joins(:orders).order("items.name ASC").distinct.pluck(:name)
     # ---------------------------------------------------------------
 
     # Expectations
@@ -41,7 +39,7 @@ describe 'ActiveRecord Obstacle Course, Week 5' do
     expect(ordered_items_names).to_not include(unordered_items)
   end
 
-  xit '27. returns a table of information for all users orders' do
+  it '27. returns a table of information for all users orders' do
     custom_results = [@user_3, @user_1, @user_2]
 
     # using a single ActiveRecord call, fetch a joined object that mimics the
@@ -53,7 +51,10 @@ describe 'ActiveRecord Obstacle Course, Week 5' do
     # Zoolander      |         6
 
     # ------------------ ActiveRecord Solution ----------------------
-    custom_results = []
+    custom_results = User.joins(:orders)
+      .select("users.name, count(users.name) as total_order_count")
+      .group("user_id")
+      .order("total_order_count")
     # ---------------------------------------------------------------
 
     expect(custom_results[0].name).to eq(@user_3.name)
@@ -64,7 +65,7 @@ describe 'ActiveRecord Obstacle Course, Week 5' do
     expect(custom_results[2].total_order_count).to eq(6)
   end
 
-  xit '28. returns a table of information for all users items' do
+  it '28. returns a table of information for all users items' do
     custom_results = [@user_2, @user_3, @user_1]
 
     # using a single ActiveRecord call, fetch a joined object that mimics the
@@ -76,7 +77,10 @@ describe 'ActiveRecord Obstacle Course, Week 5' do
     # Zoolander       |         24
 
     # ------------------ ActiveRecord Solution ----------------------
-    custom_results = []
+    custom_results = User.joins(:items)
+      .select("users.name, count(users.name) as total_item_count")
+      .group("user_id")
+      .order("users.name")
     # ---------------------------------------------------------------
 
     expect(custom_results[0].name).to eq(@user_2.name)
@@ -87,11 +91,11 @@ describe 'ActiveRecord Obstacle Course, Week 5' do
     expect(custom_results[2].total_item_count).to eq(24)
   end
 
-  xit '29. returns a table of information for all users orders and item counts' do
+  it '29. returns a table of information for all users orders and item counts' do
     # using a single ActiveRecord call, fetch a joined object that mimics the
     # following table of information:
     # ---------------------------------------
-    # user_name  | order_id  | avg_item_cost
+    # user_name      | order_id  | avg_item_cost
     # Zoolander      | 5         | 50
     # Zoolander      | 11        | 125
     # Zoolander      | 8         | 145
@@ -122,27 +126,34 @@ describe 'ActiveRecord Obstacle Course, Week 5' do
     # how will you turn this into the proper ActiveRecord commands?
 
     # ------------------ ActiveRecord Solution ----------------------
-    data = []
+    data = User.joins(:order_items)
+      .select("users.name as user_name, orders.id as order_id, (orders.amount/count(order_items.id)) as avg_item_cost")
+      .group("user_name, order_id")
+      .order("user_name DESC, avg_item_cost")
+
+    names = data.map(&:user_name)
+    ids = data.map(&:order_id)
+    avg = data.map(&:avg_item_cost)
     # ---------------------------------------------------------------
 
-    expect([data[0].user_name,data[0].order_id,data[0].avg_item_cost]).to eq([@user_1.name, @order_1.id, 50])
-    expect([data[1].user_name,data[1].order_id,data[1].avg_item_cost]).to eq([@user_1.name, @order_4.id, 125])
-    expect([data[2].user_name,data[2].order_id,data[2].avg_item_cost]).to eq([@user_1.name, @order_6.id, 145])
-    expect([data[3].user_name,data[3].order_id,data[3].avg_item_cost]).to eq([@user_1.name, @order_7.id, 150])
-    expect([data[4].user_name,data[4].order_id,data[4].avg_item_cost]).to eq([@user_1.name, @order_10.id, 187])
-    expect([data[5].user_name,data[5].order_id,data[5].avg_item_cost]).to eq([@user_1.name, @order_13.id, 217])
-    expect([data[6].user_name,data[6].order_id,data[6].avg_item_cost]).to eq([@user_3.name, @order_3.id, 125])
-    expect([data[7].user_name,data[7].order_id,data[7].avg_item_cost]).to eq([@user_3.name, @order_9.id, 162])
-    expect([data[8].user_name,data[8].order_id,data[8].avg_item_cost]).to eq([@user_3.name, @order_12.id, 212])
-    expect([data[9].user_name,data[9].order_id,data[9].avg_item_cost]).to eq([@user_3.name, @order_15.id, 250])
-    expect([data[10].user_name,data[10].order_id,data[10].avg_item_cost]).to eq([@user_2.name, @order_2.id, 75])
-    expect([data[11].user_name,data[11].order_id,data[11].avg_item_cost]).to eq([@user_2.name, @order_5.id, 137])
-    expect([data[12].user_name,data[12].order_id,data[12].avg_item_cost]).to eq([@user_2.name, @order_8.id, 175])
-    expect([data[13].user_name,data[13].order_id,data[13].avg_item_cost]).to eq([@user_2.name, @order_11.id, 200])
-    expect([data[14].user_name,data[14].order_id,data[14].avg_item_cost]).to eq([@user_2.name, @order_14.id, 225])
+    expect([data[0].user_name, data[0].order_id, data[0].avg_item_cost]).to eq([@user_1.name, @order_1.id, 50])
+    expect([data[1].user_name, data[1].order_id, data[1].avg_item_cost]).to eq([@user_1.name, @order_4.id, 125])
+    expect([data[2].user_name, data[2].order_id, data[2].avg_item_cost]).to eq([@user_1.name, @order_6.id, 145])
+    expect([data[3].user_name, data[3].order_id, data[3].avg_item_cost]).to eq([@user_1.name, @order_7.id, 150])
+    expect([data[4].user_name, data[4].order_id, data[4].avg_item_cost]).to eq([@user_1.name, @order_10.id, 187])
+    expect([data[5].user_name, data[5].order_id, data[5].avg_item_cost]).to eq([@user_1.name, @order_13.id, 217])
+    expect([data[6].user_name, data[6].order_id, data[6].avg_item_cost]).to eq([@user_3.name, @order_3.id, 125])
+    expect([data[7].user_name, data[7].order_id, data[7].avg_item_cost]).to eq([@user_3.name, @order_9.id, 162])
+    expect([data[8].user_name, data[8].order_id, data[8].avg_item_cost]).to eq([@user_3.name, @order_12.id, 212])
+    expect([data[9].user_name, data[9].order_id, data[9].avg_item_cost]).to eq([@user_3.name, @order_15.id, 250])
+    expect([data[10].user_name, data[10].order_id, data[10].avg_item_cost]).to eq([@user_2.name, @order_2.id, 75])
+    expect([data[11].user_name, data[11].order_id, data[11].avg_item_cost]).to eq([@user_2.name, @order_5.id, 137])
+    expect([data[12].user_name, data[12].order_id, data[12].avg_item_cost]).to eq([@user_2.name, @order_8.id, 175])
+    expect([data[13].user_name, data[13].order_id, data[13].avg_item_cost]).to eq([@user_2.name, @order_11.id, 200])
+    expect([data[14].user_name, data[14].order_id, data[14].avg_item_cost]).to eq([@user_2.name, @order_14.id, 225])
   end
 
-  xit '30. returns the names of items that have been ordered without n+1 queries' do
+  it '30. returns the names of items that have been ordered without n+1 queries' do
     # What is an n+1 query?
     # This video is older, but the concepts explained are still relevant:
     # http://railscasts.com/episodes/372-bullet
@@ -153,7 +164,7 @@ describe 'ActiveRecord Obstacle Course, Week 5' do
     Bullet.start_request
 
     # ------------------------------------------------------
-    orders = Order.all # Edit only this line
+    orders = Order.includes(:items)
     # ------------------------------------------------------
 
     # Do not edit below this line

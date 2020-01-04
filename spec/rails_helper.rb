@@ -27,6 +27,8 @@ require 'rspec/rails'
 ActiveRecord::Migration.maintain_test_schema!
 
 RSpec.configure do |config|
+  config.default_formatter = 'NyanCatFormatter'
+
   config.before(:each) do
     # The items and orders above were created out of order *ON PURPOSE* -- there are many ways to solve
     # these problems, but we found that students were writing incorrect queries that still passed because
